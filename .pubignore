@@ -1,6 +1,5 @@
-rust/target/
-example/build/
+**/.dart_tool/
+**/build/
+**/coverage/
 **/cargokit_build/
-.dart_tool/
-build/
-coverage/
+/rust/target/
