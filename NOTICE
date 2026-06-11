@@ -1,0 +1,51 @@
+rope_editor
+Copyright (C) 2026 Patrick Legacy
+
+This package incorporates third-party code under the licenses below.
+
+--------------------------------------------------------------------------------
+Zed rope (GPL-3.0-or-later)
+--------------------------------------------------------------------------------
+
+The files under rust/src/zed_rope/ are adapted from Zed's rope crate.
+
+  Source:  https://github.com/zed-industries/zed
+  License: GNU General Public License v3.0 or later
+  Files:   rust/src/zed_rope/*
+
+Because this code is licensed under the GPL, rope_editor as a whole is
+distributed under GPL-3.0-or-later. See LICENSE for the full license text.
+
+--------------------------------------------------------------------------------
+Zed sum_tree (Apache-2.0)
+--------------------------------------------------------------------------------
+
+The files under rust/src/zed_sum_tree/ are adapted from Zed's sum_tree crate.
+
+  Source:  https://github.com/zed-industries/zed
+  License: Apache License 2.0
+  Files:   rust/src/zed_sum_tree/*
+
+Apache-2.0 is compatible with GPL-3.0. The Apache license requires that
+copyright and license notices be preserved in distributions of the adapted
+source. Those notices appear at the top of each file in rust/src/zed_sum_tree/.
+
+--------------------------------------------------------------------------------
+Cargokit (MIT)
+--------------------------------------------------------------------------------
+
+Build tooling under cargokit/ is copied from Cargokit.
+
+  Source:     https://github.com/irondash/cargokit
+  Copyright:  Copyright 2022 Matej Knopp
+  License:    MIT
+  See:        cargokit/LICENSE
+
+--------------------------------------------------------------------------------
+CodeForge (MIT)
+--------------------------------------------------------------------------------
+
+Dart-layer editor patterns in this package were influenced by CodeForge.
+
+  Source:  https://github.com/heckmon/code_forge
+  License: MIT (upstream; not redistributed as source)

@@ -1,0 +1,5 @@
+rust_input: "crate::api"
+rust_root: "rust"
+dart_output: "lib/src/rust"
+# Use standard Dart ints for 64-bit integers (prevents BigInt overhead)
+type_64bit_int: true
