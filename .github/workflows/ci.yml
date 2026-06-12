@@ -46,6 +46,8 @@ jobs:
         run: cargo test
 
       - name: Run Dart tests and generate coverage
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/rust/target/debug
         run: flutter test --coverage
 
       - name: Upload coverage report
