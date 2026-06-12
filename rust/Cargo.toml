@@ -10,7 +10,7 @@ path = "src/lib.rs" # Ensure this file exists at rust/src/lib.rs
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
-flutter_rust_bridge = "=2.12.0"
+flutter_rust_bridge = "=2.11.1"
 parking_lot = "0.12"
 regex = "1.10"
 heapless = "0.8"

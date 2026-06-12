@@ -98,10 +98,10 @@ packages:
     dependency: transitive
     description:
       name: flutter_rust_bridge
-      sha256: e87d6b9ee934dcd24a128ccb2bd91905d2d5fe5c06245d6a8f5477d4907a437a
+      sha256: "37ef40bc6f863652e865f0b2563ea07f0d3c58d8efad803cc01933a4b2ee067e"
       url: "https://pub.dev"
     source: hosted
-    version: "2.12.0"
+    version: "2.11.1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -135,10 +135,18 @@ packages:
     dependency: transitive
     description:
       name: legacy_context_menu
-      sha256: "46086fba24eadfc2d266776eb575b6ce3f03746a8e2575879d3f7cd30877febf"
+      sha256: "1d02078adf5c2bbff0068b758e4a929e5359090b9581468069a0f83591415cf0"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.2"
+    version: "2.2.0"
+  legacy_keyboard_shortcut_decoration:
+    dependency: transitive
+    description:
+      name: legacy_keyboard_shortcut_decoration
+      sha256: "42d340c71f75e9f32dee6a19d3e809763dd1fe52442f062e409a90d9085649ec"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   lints:
     dependency: transitive
     description:
@@ -193,7 +201,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "0.0.1"
+    version: "0.0.2"
   sky_engine:
     dependency: transitive
     description: flutter
