@@ -5,10 +5,12 @@
 
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
+part 'api.freezed.dart';
 
-// These functions are ignored because they are not marked as `pub`: `byte_to_line`, `byte_to_utf16_offset`, `byte_to_utf16`, `char_at_byte`, `char_to_utf16_offset`, `find_word_boundary_backward`, `find_word_boundary_forward`, `from_char`, `from_file`, `get_state`, `line_chars`, `line_to_byte`, `max_line_utf16_len`, `new`, `new`, `rope_len_lines`, `utf16_to_byte`, `utf16_to_char_offset`
+// These functions are ignored because they are not marked as `pub`: `apply_single_agent_action`, `byte_to_line`, `byte_to_utf16_offset`, `byte_to_utf16`, `char_at_byte`, `char_to_utf16_offset`, `clone_handle`, `find_word_boundary_backward`, `find_word_boundary_forward`, `format_numbered_lines`, `from_char`, `from_file`, `get_state`, `line_chars`, `line_to_byte`, `max_line_utf16_len`, `new`, `new`, `rope_len_lines`, `utf16_to_byte`, `utf16_to_char_offset`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `CharClass`, `EditorState`, `SearchMatch`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `clone`, `eq`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
 
 RopeMetrics getMetrics({required RopeInstance instance}) =>
     RustLib.instance.api.crateApiGetMetrics(instance: instance);
@@ -386,8 +388,173 @@ bool isImeWindowValid(
         cachedWindowStart: cachedWindowStart,
         cachedWindowEnd: cachedWindowEnd);
 
+/// Returns contextual text around a UTF-16 range without loading the whole file.
+///
+/// [context_lines] controls how many lines before and after the selection are
+/// included in [RangeContext::context_lines].
+RangeContext getContextForRange(
+        {required RopeInstance instance,
+        required int startUtf16,
+        required int endUtf16,
+        required int contextLines,
+        required List<FileReference> relatedFiles}) =>
+    RustLib.instance.api.crateApiGetContextForRange(
+        instance: instance,
+        startUtf16: startUtf16,
+        endUtf16: endUtf16,
+        contextLines: contextLines,
+        relatedFiles: relatedFiles);
+
+/// Applies agent edits as a single atomic transaction on the rope.
+///
+/// Actions are sorted by descending start offset so earlier edits do not
+/// invalidate later offsets. The caller is responsible for notifying Flutter
+/// listeners after this returns.
+AgentEditResult applyAgentEdit(
+        {required RopeInstance instance,
+        required List<EditorAction> actions}) =>
+    RustLib.instance.api
+        .crateApiApplyAgentEdit(instance: instance, actions: actions);
+
+/// Runs yoyo-evolve-inspired orchestration and returns the final response.
+AgentResponse orchestrateRequestSync(
+        {required RopeInstance instance,
+        required OrchestrateRequest request}) =>
+    RustLib.instance.api
+        .crateApiOrchestrateRequestSync(instance: instance, request: request);
+
+/// Streaming orchestration for real-time UI updates.
+Stream<OrchestrateEvent> orchestrateRequest(
+        {required RopeInstance instance,
+        required OrchestrateRequest request}) =>
+    RustLib.instance.api
+        .crateApiOrchestrateRequest(instance: instance, request: request);
+
+/// Stops orchestrate threads left over from a prior Dart isolate (Flutter hot restart).
+void orchestrateCancelStale() =>
+    RustLib.instance.api.crateApiOrchestrateCancelStale();
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<RopeInstance>>
 abstract class RopeInstance implements RustOpaqueInterface {}
+
+/// LLM backend configuration passed from Dart preferences.
+class AgentBackendConfig {
+  final String backendId;
+  final String baseUrl;
+  final String model;
+  final String apiKey;
+
+  const AgentBackendConfig({
+    required this.backendId,
+    required this.baseUrl,
+    required this.model,
+    required this.apiKey,
+  });
+
+  @override
+  int get hashCode =>
+      backendId.hashCode ^ baseUrl.hashCode ^ model.hashCode ^ apiKey.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AgentBackendConfig &&
+          runtimeType == other.runtimeType &&
+          backendId == other.backendId &&
+          baseUrl == other.baseUrl &&
+          model == other.model &&
+          apiKey == other.apiKey;
+}
+
+/// Token budget snapshot for the agent panel.
+class AgentContextBudget {
+  final int promptTokens;
+  final int transcriptTokens;
+  final int totalTokens;
+  final int contextWindow;
+  final int usagePercent;
+  final String warningLevel;
+
+  const AgentContextBudget({
+    required this.promptTokens,
+    required this.transcriptTokens,
+    required this.totalTokens,
+    required this.contextWindow,
+    required this.usagePercent,
+    required this.warningLevel,
+  });
+
+  @override
+  int get hashCode =>
+      promptTokens.hashCode ^
+      transcriptTokens.hashCode ^
+      totalTokens.hashCode ^
+      contextWindow.hashCode ^
+      usagePercent.hashCode ^
+      warningLevel.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AgentContextBudget &&
+          runtimeType == other.runtimeType &&
+          promptTokens == other.promptTokens &&
+          transcriptTokens == other.transcriptTokens &&
+          totalTokens == other.totalTokens &&
+          contextWindow == other.contextWindow &&
+          usagePercent == other.usagePercent &&
+          warningLevel == other.warningLevel;
+}
+
+/// Result of applying a batch of agent edits atomically.
+class AgentEditResult {
+  final int newLength;
+  final int newLineCount;
+  final bool lineCountChanged;
+  final int appliedCount;
+
+  const AgentEditResult({
+    required this.newLength,
+    required this.newLineCount,
+    required this.lineCountChanged,
+    required this.appliedCount,
+  });
+
+  @override
+  int get hashCode =>
+      newLength.hashCode ^
+      newLineCount.hashCode ^
+      lineCountChanged.hashCode ^
+      appliedCount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AgentEditResult &&
+          runtimeType == other.runtimeType &&
+          newLength == other.newLength &&
+          newLineCount == other.newLineCount &&
+          lineCountChanged == other.lineCountChanged &&
+          appliedCount == other.appliedCount;
+}
+
+@freezed
+sealed class AgentResponse with _$AgentResponse {
+  const AgentResponse._();
+
+  const factory AgentResponse.applyEdits({
+    required List<EditorAction> edits,
+
+    /// Conversational reply for the agent REPL in the same turn.
+    required String message,
+  }) = AgentResponse_ApplyEdits;
+  const factory AgentResponse.clarify({
+    required String message,
+  }) = AgentResponse_Clarify;
+  const factory AgentResponse.summarize({
+    required String summary,
+  }) = AgentResponse_Summarize;
+}
 
 /// Cursor context returned by get_cursor_context.
 /// Provides all information needed for cursor positioning in a single FFI call.
@@ -575,6 +742,84 @@ class EditResult {
           newLineCount == other.newLineCount;
 }
 
+/// A single agent edit action targeting UTF-16 offsets in the document.
+class EditorAction {
+  final EditorActionKind kind;
+  final int startUtf16;
+  final int endUtf16;
+
+  /// Replacement or inserted text. Empty for [EditorActionKind::Delete].
+  final String text;
+
+  const EditorAction({
+    required this.kind,
+    required this.startUtf16,
+    required this.endUtf16,
+    required this.text,
+  });
+
+  @override
+  int get hashCode =>
+      kind.hashCode ^ startUtf16.hashCode ^ endUtf16.hashCode ^ text.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EditorAction &&
+          runtimeType == other.runtimeType &&
+          kind == other.kind &&
+          startUtf16 == other.startUtf16 &&
+          endUtf16 == other.endUtf16 &&
+          text == other.text;
+}
+
+/// Kind of edit an agent can perform on the document rope.
+enum EditorActionKind {
+  insert,
+  delete,
+  replace,
+  ;
+}
+
+/// A lightweight reference to an open or related file in agent context.
+class FileReference {
+  /// Display path or filename.
+  final String path;
+
+  /// Leading content sample (not the full file).
+  final String snippet;
+
+  /// Content fingerprint from the rope hash API.
+  final int contentHash;
+
+  /// Whether this is the actively edited file.
+  final bool isActive;
+
+  const FileReference({
+    required this.path,
+    required this.snippet,
+    required this.contentHash,
+    required this.isActive,
+  });
+
+  @override
+  int get hashCode =>
+      path.hashCode ^
+      snippet.hashCode ^
+      contentHash.hashCode ^
+      isActive.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FileReference &&
+          runtimeType == other.runtimeType &&
+          path == other.path &&
+          snippet == other.snippet &&
+          contentHash == other.contentHash &&
+          isActive == other.isActive;
+}
+
 /// IME projection window state.
 class ImeProjection {
   /// Whether a new window was computed (false means use cached).
@@ -712,6 +957,182 @@ class MinimapLineDensity {
           leadingWhitespace == other.leadingWhitespace &&
           contentLength == other.contentLength &&
           isEmpty == other.isEmpty;
+}
+
+@freezed
+sealed class OrchestrateEvent with _$OrchestrateEvent {
+  const OrchestrateEvent._();
+
+  const factory OrchestrateEvent.thinking({
+    required String text,
+  }) = OrchestrateEvent_Thinking;
+  const factory OrchestrateEvent.editDelta({
+    required String delta,
+  }) = OrchestrateEvent_EditDelta;
+
+  /// Reports which files are in the agent context window.
+  const factory OrchestrateEvent.contextWindowUpdate({
+    required List<FileReference> files,
+    required String message,
+  }) = OrchestrateEvent_ContextWindowUpdate;
+
+  /// Estimated token usage before the LLM call.
+  const factory OrchestrateEvent.contextBudgetUpdate({
+    required AgentContextBudget budget,
+  }) = OrchestrateEvent_ContextBudgetUpdate;
+  const factory OrchestrateEvent.complete({
+    required AgentResponse response,
+  }) = OrchestrateEvent_Complete;
+  const factory OrchestrateEvent.error({
+    required String message,
+  }) = OrchestrateEvent_Error;
+}
+
+/// Full orchestration request from the IDE.
+class OrchestrateRequest {
+  final String userInput;
+  final String filename;
+  final String language;
+  final int startUtf16;
+  final int endUtf16;
+  final AgentBackendConfig backend;
+
+  /// Open documents indexed by Dart for multi-file context.
+  final List<FileReference> openFiles;
+
+  /// Project/workspace root for git + instruction file context.
+  final String projectRoot;
+
+  /// Estimated tokens from prior chat turns (computed in Dart).
+  final int conversationTranscriptTokens;
+
+  /// Model context window size (defaults to 32k when zero).
+  final int contextWindowTokens;
+
+  /// Numbered project memories from `.rope_notes/memory.json` (Dart-side).
+  final String projectMemories;
+
+  const OrchestrateRequest({
+    required this.userInput,
+    required this.filename,
+    required this.language,
+    required this.startUtf16,
+    required this.endUtf16,
+    required this.backend,
+    required this.openFiles,
+    required this.projectRoot,
+    required this.conversationTranscriptTokens,
+    required this.contextWindowTokens,
+    required this.projectMemories,
+  });
+
+  @override
+  int get hashCode =>
+      userInput.hashCode ^
+      filename.hashCode ^
+      language.hashCode ^
+      startUtf16.hashCode ^
+      endUtf16.hashCode ^
+      backend.hashCode ^
+      openFiles.hashCode ^
+      projectRoot.hashCode ^
+      conversationTranscriptTokens.hashCode ^
+      contextWindowTokens.hashCode ^
+      projectMemories.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is OrchestrateRequest &&
+          runtimeType == other.runtimeType &&
+          userInput == other.userInput &&
+          filename == other.filename &&
+          language == other.language &&
+          startUtf16 == other.startUtf16 &&
+          endUtf16 == other.endUtf16 &&
+          backend == other.backend &&
+          openFiles == other.openFiles &&
+          projectRoot == other.projectRoot &&
+          conversationTranscriptTokens == other.conversationTranscriptTokens &&
+          contextWindowTokens == other.contextWindowTokens &&
+          projectMemories == other.projectMemories;
+}
+
+/// Context window around a UTF-16 range for agent prompts.
+class RangeContext {
+  /// The requested range start (UTF-16).
+  final int startUtf16;
+
+  /// The requested range end (UTF-16).
+  final int endUtf16;
+
+  /// Text within [start_utf16, end_utf16).
+  final String selectedText;
+
+  /// Characters immediately before the selection (within the context window).
+  final String contextBefore;
+
+  /// Characters immediately after the selection (within the context window).
+  final String contextAfter;
+
+  /// Full line block covering the context window, including line numbers.
+  final String contextLines;
+
+  /// First line index included in [context_lines].
+  final int startLine;
+
+  /// Last line index included in [context_lines] (inclusive).
+  final int endLine;
+  final int totalLines;
+  final int totalLength;
+
+  /// Other open files in scope (path, snippet, hash) without full project load.
+  final List<FileReference> relatedFiles;
+
+  const RangeContext({
+    required this.startUtf16,
+    required this.endUtf16,
+    required this.selectedText,
+    required this.contextBefore,
+    required this.contextAfter,
+    required this.contextLines,
+    required this.startLine,
+    required this.endLine,
+    required this.totalLines,
+    required this.totalLength,
+    required this.relatedFiles,
+  });
+
+  @override
+  int get hashCode =>
+      startUtf16.hashCode ^
+      endUtf16.hashCode ^
+      selectedText.hashCode ^
+      contextBefore.hashCode ^
+      contextAfter.hashCode ^
+      contextLines.hashCode ^
+      startLine.hashCode ^
+      endLine.hashCode ^
+      totalLines.hashCode ^
+      totalLength.hashCode ^
+      relatedFiles.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RangeContext &&
+          runtimeType == other.runtimeType &&
+          startUtf16 == other.startUtf16 &&
+          endUtf16 == other.endUtf16 &&
+          selectedText == other.selectedText &&
+          contextBefore == other.contextBefore &&
+          contextAfter == other.contextAfter &&
+          contextLines == other.contextLines &&
+          startLine == other.startLine &&
+          endLine == other.endLine &&
+          totalLines == other.totalLines &&
+          totalLength == other.totalLength &&
+          relatedFiles == other.relatedFiles;
 }
 
 /// Metrics returned in a single FFI call to minimize cross-language traffic.

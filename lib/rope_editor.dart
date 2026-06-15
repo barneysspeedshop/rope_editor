@@ -17,7 +17,24 @@ export 'src/rope/version.dart';
 export 'src/rust/frb_generated.dart' show RustLib;
 
 // Export batch API types
-export 'src/rust/api.dart' show MinimapLineDensity;
+export 'src/rust/api.dart'
+    show
+        MinimapLineDensity,
+        EditorActionKind,
+        AgentBackendConfig,
+        AgentContextBudget,
+        AgentResponse,
+        FileReference,
+        OrchestrateEvent,
+        OrchestrateRequest,
+        RopeInstance,
+        orchestrateCancelStale,
+        orchestrateRequest,
+        orchestrateRequestSync;
+export 'src/rope/rope.dart'
+    show RangeContext, AgentEditResult, EditorAction;
+
+export 'src/agent/orchestrate_event_dispatch.dart';
 
 // Re-export relevant types from re_highlight
 export 'package:re_highlight/re_highlight.dart' show Mode;

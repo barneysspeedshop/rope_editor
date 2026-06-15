@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2026-06-14
+
+### Added
+
+- **Rust orchestrator** — streaming and sync agent orchestration via `orchestrateRequest`, `orchestrateRequestSync`, and `orchestrateCancelStale`; emits `OrchestrateEvent` updates (thinking, edit deltas, context window/budget, completion, errors)
+- **Agent edit pipeline** — `applyAgentEdit`, `EditorAction`/`EditorActionKind`, `getContextForRange`, and `RopeEditorController.applyAgentActions` for atomic multi-edit application with undo support
+- **`OrchestrateEventDispatch`** — `dispatch` extension for routing streaming orchestrator events to host-app callbacks
+- **`editorTheme` on `RopeEditor`** — optional syntax-highlighting theme map for root, gutter, selection, and cursor styling
+- **Mouse click selection** — double-click selects a word; triple-click selects a line
+
+### Changed
+
+- Example app follows system light/dark mode and passes `github` / `github-dark` highlight themes to the editor
+
+### Dependencies
+
+- Added `freezed_annotation` (^2.4.4) for `AgentResponse` and `OrchestrateEvent` sealed unions
+
 ## [0.0.4] - 2026-06-12
 
 - **Update dependency** — Updated the `flutter_rust_bridge` dependency to 2.12.0
@@ -45,4 +63,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Distributed under **GPL-3.0-or-later** because the native library links code adapted from Zed's GPL `rope` crate. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
+[0.1.0]: #010---2026-06-14
 [0.0.1]: #001---2026-06-11

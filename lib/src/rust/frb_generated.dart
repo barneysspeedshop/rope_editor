@@ -68,7 +68,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -438618491;
+  int get rustContentHash => 2037253407;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -80,6 +80,9 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
+  AgentEditResult crateApiApplyAgentEdit(
+      {required RopeInstance instance, required List<EditorAction> actions});
+
   List<int> crateApiByteOffsetToLineColumn(
       {required RopeInstance instance, required int byteOffset});
 
@@ -115,6 +118,13 @@ abstract class RustLibApi extends BaseApi {
       required bool forward});
 
   int crateApiGetContentHash({required RopeInstance instance});
+
+  RangeContext crateApiGetContextForRange(
+      {required RopeInstance instance,
+      required int startUtf16,
+      required int endUtf16,
+      required int contextLines,
+      required List<FileReference> relatedFiles});
 
   CursorContext crateApiGetCursorContext(
       {required RopeInstance instance, required int offsetUtf16});
@@ -214,6 +224,14 @@ abstract class RustLibApi extends BaseApi {
   List<int> crateApiOffsetToPoint(
       {required RopeInstance instance, required int offsetUtf16});
 
+  void crateApiOrchestrateCancelStale();
+
+  Stream<OrchestrateEvent> crateApiOrchestrateRequest(
+      {required RopeInstance instance, required OrchestrateRequest request});
+
+  AgentResponse crateApiOrchestrateRequestSync(
+      {required RopeInstance instance, required OrchestrateRequest request});
+
   int crateApiPointToOffset(
       {required RopeInstance instance,
       required int row,
@@ -294,6 +312,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
+  AgentEditResult crateApiApplyAgentEdit(
+      {required RopeInstance instance, required List<EditorAction> actions}) {
+    return handler.executeSync(SyncTask(
+      callFfi: () {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
+            instance, serializer);
+        sse_encode_list_editor_action(actions, serializer);
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_agent_edit_result,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiApplyAgentEditConstMeta,
+      argValues: [instance, actions],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiApplyAgentEditConstMeta => const TaskConstMeta(
+        debugName: "apply_agent_edit",
+        argNames: ["instance", "actions"],
+      );
+
+  @override
   List<int> crateApiByteOffsetToLineColumn(
       {required RopeInstance instance, required int byteOffset}) {
     return handler.executeSync(SyncTask(
@@ -302,7 +346,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(byteOffset, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_CastedPrimitive_usize,
@@ -329,7 +373,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(byteOffset, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -356,7 +400,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(offsetUtf16, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_u_8,
@@ -387,7 +431,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_CastedPrimitive_usize(row, serializer);
         sse_encode_CastedPrimitive_usize(columnBytes, serializer);
         sse_encode_u_8(bias, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_CastedPrimitive_usize,
@@ -410,7 +454,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(text, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6)!;
       },
       codec: SseCodec(
         decodeSuccessData:
@@ -435,7 +479,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(text, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 6, port: port_);
+            funcId: 7, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData:
@@ -463,7 +507,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(path, serializer);
         sse_encode_opt_CastedPrimitive_usize(maxChars, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 7, port: port_);
+            funcId: 8, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData:
@@ -494,7 +538,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(startUtf16, serializer);
         sse_encode_CastedPrimitive_usize(endUtf16, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -518,7 +562,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_indent_info,
@@ -547,7 +591,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(offsetUtf16, serializer);
         sse_encode_bool(forward, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -571,7 +615,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_i_64,
@@ -589,6 +633,45 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  RangeContext crateApiGetContextForRange(
+      {required RopeInstance instance,
+      required int startUtf16,
+      required int endUtf16,
+      required int contextLines,
+      required List<FileReference> relatedFiles}) {
+    return handler.executeSync(SyncTask(
+      callFfi: () {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
+            instance, serializer);
+        sse_encode_CastedPrimitive_usize(startUtf16, serializer);
+        sse_encode_CastedPrimitive_usize(endUtf16, serializer);
+        sse_encode_CastedPrimitive_usize(contextLines, serializer);
+        sse_encode_list_file_reference(relatedFiles, serializer);
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_range_context,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiGetContextForRangeConstMeta,
+      argValues: [instance, startUtf16, endUtf16, contextLines, relatedFiles],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiGetContextForRangeConstMeta => const TaskConstMeta(
+        debugName: "get_context_for_range",
+        argNames: [
+          "instance",
+          "startUtf16",
+          "endUtf16",
+          "contextLines",
+          "relatedFiles"
+        ],
+      );
+
+  @override
   CursorContext crateApiGetCursorContext(
       {required RopeInstance instance, required int offsetUtf16}) {
     return handler.executeSync(SyncTask(
@@ -597,7 +680,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(offsetUtf16, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_cursor_context,
@@ -634,7 +717,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_CastedPrimitive_usize(maxWindowSize, serializer);
         sse_encode_CastedPrimitive_usize(cachedWindowStart, serializer);
         sse_encode_CastedPrimitive_usize(cachedWindowEnd, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_ime_projection,
@@ -674,7 +757,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -700,7 +783,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(offsetUtf16, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -725,7 +808,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -751,7 +834,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(lineIndex, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -780,7 +863,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(startLine, serializer);
         sse_encode_CastedPrimitive_usize(endLine, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_line_indent_info,
@@ -807,7 +890,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(lineIndex, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -834,7 +917,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(lineIndex, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -864,7 +947,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(startLine, serializer);
         sse_encode_CastedPrimitive_usize(endLine, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_CastedPrimitive_usize,
@@ -891,7 +974,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(lineIndex, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 24)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -917,7 +1000,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_list_CastedPrimitive_usize(lineIndices, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_String,
@@ -946,7 +1029,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(startLine, serializer);
         sse_encode_CastedPrimitive_usize(endLine, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 24)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -970,7 +1053,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_rope_metrics,
@@ -996,7 +1079,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_list_CastedPrimitive_usize(lineIndices, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_minimap_line_density,
@@ -1026,7 +1109,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(startLine, serializer);
         sse_encode_CastedPrimitive_usize(endLine, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_line_indent_info,
@@ -1051,7 +1134,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1076,7 +1159,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 29, port: port_);
+            funcId: 31, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1105,7 +1188,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(startUtf16, serializer);
         sse_encode_CastedPrimitive_usize(maxLength, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 32)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1134,7 +1217,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(startUtf16, serializer);
         sse_encode_CastedPrimitive_usize(endUtf16, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 31)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 33)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1158,7 +1241,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 32)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 34)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_document_text_summary,
@@ -1187,7 +1270,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(offsetUtf16, serializer);
         sse_encode_String(text, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 33)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 35)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -1220,7 +1303,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_CastedPrimitive_usize(maxWindowSize, serializer);
         sse_encode_CastedPrimitive_usize(cachedWindowStart, serializer);
         sse_encode_CastedPrimitive_usize(cachedWindowEnd, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 34)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 36)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_bool,
@@ -1261,7 +1344,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(line, serializer);
         sse_encode_CastedPrimitive_usize(columnUtf16, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 35)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 37)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -1288,7 +1371,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(offsetUtf16, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 36)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 38)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -1314,7 +1397,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(offsetUtf16, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 37)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 39)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_CastedPrimitive_usize,
@@ -1332,6 +1415,86 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  void crateApiOrchestrateCancelStale() {
+    return handler.executeSync(SyncTask(
+      callFfi: () {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 40)!;
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiOrchestrateCancelStaleConstMeta,
+      argValues: [],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiOrchestrateCancelStaleConstMeta =>
+      const TaskConstMeta(
+        debugName: "orchestrate_cancel_stale",
+        argNames: [],
+      );
+
+  @override
+  Stream<OrchestrateEvent> crateApiOrchestrateRequest(
+      {required RopeInstance instance, required OrchestrateRequest request}) {
+    final sink = RustStreamSink<OrchestrateEvent>();
+    unawaited(handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
+            instance, serializer);
+        sse_encode_box_autoadd_orchestrate_request(request, serializer);
+        sse_encode_StreamSink_orchestrate_event_Sse(sink, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 41, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiOrchestrateRequestConstMeta,
+      argValues: [instance, request, sink],
+      apiImpl: this,
+    )));
+    return sink.stream;
+  }
+
+  TaskConstMeta get kCrateApiOrchestrateRequestConstMeta => const TaskConstMeta(
+        debugName: "orchestrate_request",
+        argNames: ["instance", "request", "sink"],
+      );
+
+  @override
+  AgentResponse crateApiOrchestrateRequestSync(
+      {required RopeInstance instance, required OrchestrateRequest request}) {
+    return handler.executeSync(SyncTask(
+      callFfi: () {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
+            instance, serializer);
+        sse_encode_box_autoadd_orchestrate_request(request, serializer);
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 42)!;
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_agent_response,
+        decodeErrorData: sse_decode_String,
+      ),
+      constMeta: kCrateApiOrchestrateRequestSyncConstMeta,
+      argValues: [instance, request],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiOrchestrateRequestSyncConstMeta =>
+      const TaskConstMeta(
+        debugName: "orchestrate_request_sync",
+        argNames: ["instance", "request"],
+      );
+
+  @override
   int crateApiPointToOffset(
       {required RopeInstance instance,
       required int row,
@@ -1343,7 +1506,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(row, serializer);
         sse_encode_CastedPrimitive_usize(columnBytes, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 38)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 43)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -1369,7 +1532,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(offsetUtf16, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 39)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 44)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -1400,7 +1563,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_CastedPrimitive_usize(startUtf16, serializer);
         sse_encode_CastedPrimitive_usize(endUtf16, serializer);
         sse_encode_String(text, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 40)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 45)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -1431,7 +1594,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_CastedPrimitive_usize(startUtf16, serializer);
         sse_encode_CastedPrimitive_usize(endUtf16, serializer);
         sse_encode_String(text, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 41)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 46)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_edit_result,
@@ -1460,7 +1623,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(offsetUtf16, serializer);
         sse_encode_CastedPrimitive_usize(maxChars, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 42)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 47)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1489,7 +1652,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             instance, serializer);
         sse_encode_CastedPrimitive_usize(startUtf16, serializer);
         sse_encode_CastedPrimitive_usize(endUtf16, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 43)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 48)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -1521,7 +1684,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(pattern, serializer);
         sse_encode_bool(caseSensitive, serializer);
         sse_encode_bool(isRegex, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 44)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 49)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_CastedPrimitive_usize,
@@ -1556,7 +1719,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_CastedPrimitive_usize(endLine, serializer);
         sse_encode_bool(caseSensitive, serializer);
         sse_encode_bool(isRegex, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 45)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 50)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_CastedPrimitive_usize,
@@ -1601,7 +1764,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(pattern, serializer);
         sse_encode_bool(caseSensitive, serializer);
         sse_encode_bool(wholeWord, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 46)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 51)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_CastedPrimitive_usize,
@@ -1640,7 +1803,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             includeLines, serializer);
         sse_encode_opt_list_record_casted_primitive_usize_casted_primitive_usize(
             excludeLines, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 47)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 52)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_CastedPrimitive_usize,
@@ -1682,7 +1845,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
             instance, serializer);
         sse_encode_CastedPrimitive_usize(offsetUtf16, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 48)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 53)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_CastedPrimitive_usize,
@@ -1706,6 +1869,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   RustArcDecrementStrongCountFnType
       get rust_arc_decrement_strong_count_RopeInstance => wire
           .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance;
+
+  @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return AnyhowException(raw as String);
+  }
 
   @protected
   RopeInstance
@@ -1746,15 +1915,106 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  RustStreamSink<OrchestrateEvent> dco_decode_StreamSink_orchestrate_event_Sse(
+      dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
   }
 
   @protected
+  AgentBackendConfig dco_decode_agent_backend_config(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return AgentBackendConfig(
+      backendId: dco_decode_String(arr[0]),
+      baseUrl: dco_decode_String(arr[1]),
+      model: dco_decode_String(arr[2]),
+      apiKey: dco_decode_String(arr[3]),
+    );
+  }
+
+  @protected
+  AgentContextBudget dco_decode_agent_context_budget(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return AgentContextBudget(
+      promptTokens: dco_decode_u_32(arr[0]),
+      transcriptTokens: dco_decode_u_32(arr[1]),
+      totalTokens: dco_decode_u_32(arr[2]),
+      contextWindow: dco_decode_u_32(arr[3]),
+      usagePercent: dco_decode_u_32(arr[4]),
+      warningLevel: dco_decode_String(arr[5]),
+    );
+  }
+
+  @protected
+  AgentEditResult dco_decode_agent_edit_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return AgentEditResult(
+      newLength: dco_decode_CastedPrimitive_usize(arr[0]),
+      newLineCount: dco_decode_CastedPrimitive_usize(arr[1]),
+      lineCountChanged: dco_decode_bool(arr[2]),
+      appliedCount: dco_decode_CastedPrimitive_usize(arr[3]),
+    );
+  }
+
+  @protected
+  AgentResponse dco_decode_agent_response(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return AgentResponse_ApplyEdits(
+          edits: dco_decode_list_editor_action(raw[1]),
+          message: dco_decode_String(raw[2]),
+        );
+      case 1:
+        return AgentResponse_Clarify(
+          message: dco_decode_String(raw[1]),
+        );
+      case 2:
+        return AgentResponse_Summarize(
+          summary: dco_decode_String(raw[1]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
   bool dco_decode_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as bool;
+  }
+
+  @protected
+  AgentContextBudget dco_decode_box_autoadd_agent_context_budget(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_agent_context_budget(raw);
+  }
+
+  @protected
+  AgentResponse dco_decode_box_autoadd_agent_response(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_agent_response(raw);
+  }
+
+  @protected
+  OrchestrateRequest dco_decode_box_autoadd_orchestrate_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_orchestrate_request(raw);
   }
 
   @protected
@@ -1811,6 +2071,46 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       lineCountChanged: dco_decode_bool(arr[7]),
       newLineCount: dco_decode_CastedPrimitive_usize(arr[8]),
     );
+  }
+
+  @protected
+  EditorAction dco_decode_editor_action(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return EditorAction(
+      kind: dco_decode_editor_action_kind(arr[0]),
+      startUtf16: dco_decode_CastedPrimitive_usize(arr[1]),
+      endUtf16: dco_decode_CastedPrimitive_usize(arr[2]),
+      text: dco_decode_String(arr[3]),
+    );
+  }
+
+  @protected
+  EditorActionKind dco_decode_editor_action_kind(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return EditorActionKind.values[raw as int];
+  }
+
+  @protected
+  FileReference dco_decode_file_reference(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return FileReference(
+      path: dco_decode_String(arr[0]),
+      snippet: dco_decode_String(arr[1]),
+      contentHash: dco_decode_CastedPrimitive_i_64(arr[2]),
+      isActive: dco_decode_bool(arr[3]),
+    );
+  }
+
+  @protected
+  int dco_decode_i_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
   }
 
   @protected
@@ -1875,6 +2175,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<EditorAction> dco_decode_list_editor_action(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_editor_action).toList();
+  }
+
+  @protected
+  List<FileReference> dco_decode_list_file_reference(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_file_reference).toList();
+  }
+
+  @protected
   List<LineIndentInfo> dco_decode_list_line_indent_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_line_indent_info).toList();
@@ -1933,6 +2245,82 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  OrchestrateEvent dco_decode_orchestrate_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return OrchestrateEvent_Thinking(
+          text: dco_decode_String(raw[1]),
+        );
+      case 1:
+        return OrchestrateEvent_EditDelta(
+          delta: dco_decode_String(raw[1]),
+        );
+      case 2:
+        return OrchestrateEvent_ContextWindowUpdate(
+          files: dco_decode_list_file_reference(raw[1]),
+          message: dco_decode_String(raw[2]),
+        );
+      case 3:
+        return OrchestrateEvent_ContextBudgetUpdate(
+          budget: dco_decode_box_autoadd_agent_context_budget(raw[1]),
+        );
+      case 4:
+        return OrchestrateEvent_Complete(
+          response: dco_decode_box_autoadd_agent_response(raw[1]),
+        );
+      case 5:
+        return OrchestrateEvent_Error(
+          message: dco_decode_String(raw[1]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
+  OrchestrateRequest dco_decode_orchestrate_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 11)
+      throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
+    return OrchestrateRequest(
+      userInput: dco_decode_String(arr[0]),
+      filename: dco_decode_String(arr[1]),
+      language: dco_decode_String(arr[2]),
+      startUtf16: dco_decode_CastedPrimitive_usize(arr[3]),
+      endUtf16: dco_decode_CastedPrimitive_usize(arr[4]),
+      backend: dco_decode_agent_backend_config(arr[5]),
+      openFiles: dco_decode_list_file_reference(arr[6]),
+      projectRoot: dco_decode_String(arr[7]),
+      conversationTranscriptTokens: dco_decode_u_32(arr[8]),
+      contextWindowTokens: dco_decode_u_32(arr[9]),
+      projectMemories: dco_decode_String(arr[10]),
+    );
+  }
+
+  @protected
+  RangeContext dco_decode_range_context(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 11)
+      throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
+    return RangeContext(
+      startUtf16: dco_decode_CastedPrimitive_usize(arr[0]),
+      endUtf16: dco_decode_CastedPrimitive_usize(arr[1]),
+      selectedText: dco_decode_String(arr[2]),
+      contextBefore: dco_decode_String(arr[3]),
+      contextAfter: dco_decode_String(arr[4]),
+      contextLines: dco_decode_String(arr[5]),
+      startLine: dco_decode_CastedPrimitive_usize(arr[6]),
+      endLine: dco_decode_CastedPrimitive_usize(arr[7]),
+      totalLines: dco_decode_CastedPrimitive_usize(arr[8]),
+      totalLength: dco_decode_CastedPrimitive_usize(arr[9]),
+      relatedFiles: dco_decode_list_file_reference(arr[10]),
+    );
+  }
+
+  @protected
   (int, int) dco_decode_record_casted_primitive_usize_casted_primitive_usize(
       dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -1962,6 +2350,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int dco_decode_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
   int dco_decode_u_8(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -1977,6 +2371,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   BigInt dco_decode_usize(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dcoDecodeU64(raw);
+  }
+
+  @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_String(deserializer);
+    return AnyhowException(inner);
   }
 
   @protected
@@ -2021,6 +2422,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  RustStreamSink<OrchestrateEvent> sse_decode_StreamSink_orchestrate_event_Sse(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_list_prim_u_8_strict(deserializer);
@@ -2028,9 +2436,99 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AgentBackendConfig sse_decode_agent_backend_config(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_backendId = sse_decode_String(deserializer);
+    var var_baseUrl = sse_decode_String(deserializer);
+    var var_model = sse_decode_String(deserializer);
+    var var_apiKey = sse_decode_String(deserializer);
+    return AgentBackendConfig(
+        backendId: var_backendId,
+        baseUrl: var_baseUrl,
+        model: var_model,
+        apiKey: var_apiKey);
+  }
+
+  @protected
+  AgentContextBudget sse_decode_agent_context_budget(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_promptTokens = sse_decode_u_32(deserializer);
+    var var_transcriptTokens = sse_decode_u_32(deserializer);
+    var var_totalTokens = sse_decode_u_32(deserializer);
+    var var_contextWindow = sse_decode_u_32(deserializer);
+    var var_usagePercent = sse_decode_u_32(deserializer);
+    var var_warningLevel = sse_decode_String(deserializer);
+    return AgentContextBudget(
+        promptTokens: var_promptTokens,
+        transcriptTokens: var_transcriptTokens,
+        totalTokens: var_totalTokens,
+        contextWindow: var_contextWindow,
+        usagePercent: var_usagePercent,
+        warningLevel: var_warningLevel);
+  }
+
+  @protected
+  AgentEditResult sse_decode_agent_edit_result(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_newLength = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_newLineCount = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_lineCountChanged = sse_decode_bool(deserializer);
+    var var_appliedCount = sse_decode_CastedPrimitive_usize(deserializer);
+    return AgentEditResult(
+        newLength: var_newLength,
+        newLineCount: var_newLineCount,
+        lineCountChanged: var_lineCountChanged,
+        appliedCount: var_appliedCount);
+  }
+
+  @protected
+  AgentResponse sse_decode_agent_response(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_edits = sse_decode_list_editor_action(deserializer);
+        var var_message = sse_decode_String(deserializer);
+        return AgentResponse_ApplyEdits(edits: var_edits, message: var_message);
+      case 1:
+        var var_message = sse_decode_String(deserializer);
+        return AgentResponse_Clarify(message: var_message);
+      case 2:
+        var var_summary = sse_decode_String(deserializer);
+        return AgentResponse_Summarize(summary: var_summary);
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
+  AgentContextBudget sse_decode_box_autoadd_agent_context_budget(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_agent_context_budget(deserializer));
+  }
+
+  @protected
+  AgentResponse sse_decode_box_autoadd_agent_response(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_agent_response(deserializer));
+  }
+
+  @protected
+  OrchestrateRequest sse_decode_box_autoadd_orchestrate_request(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_orchestrate_request(deserializer));
   }
 
   @protected
@@ -2105,6 +2603,47 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  EditorAction sse_decode_editor_action(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_kind = sse_decode_editor_action_kind(deserializer);
+    var var_startUtf16 = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_endUtf16 = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_text = sse_decode_String(deserializer);
+    return EditorAction(
+        kind: var_kind,
+        startUtf16: var_startUtf16,
+        endUtf16: var_endUtf16,
+        text: var_text);
+  }
+
+  @protected
+  EditorActionKind sse_decode_editor_action_kind(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return EditorActionKind.values[inner];
+  }
+
+  @protected
+  FileReference sse_decode_file_reference(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_path = sse_decode_String(deserializer);
+    var var_snippet = sse_decode_String(deserializer);
+    var var_contentHash = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_isActive = sse_decode_bool(deserializer);
+    return FileReference(
+        path: var_path,
+        snippet: var_snippet,
+        contentHash: var_contentHash,
+        isActive: var_isActive);
+  }
+
+  @protected
+  int sse_decode_i_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getInt32();
+  }
+
+  @protected
   PlatformInt64 sse_decode_i_64(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getPlatformInt64();
@@ -2169,6 +2708,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var ans_ = <String>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_String(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<EditorAction> sse_decode_list_editor_action(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <EditorAction>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_editor_action(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<FileReference> sse_decode_list_file_reference(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <FileReference>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_file_reference(deserializer));
     }
     return ans_;
   }
@@ -2260,6 +2825,95 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  OrchestrateEvent sse_decode_orchestrate_event(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_text = sse_decode_String(deserializer);
+        return OrchestrateEvent_Thinking(text: var_text);
+      case 1:
+        var var_delta = sse_decode_String(deserializer);
+        return OrchestrateEvent_EditDelta(delta: var_delta);
+      case 2:
+        var var_files = sse_decode_list_file_reference(deserializer);
+        var var_message = sse_decode_String(deserializer);
+        return OrchestrateEvent_ContextWindowUpdate(
+            files: var_files, message: var_message);
+      case 3:
+        var var_budget =
+            sse_decode_box_autoadd_agent_context_budget(deserializer);
+        return OrchestrateEvent_ContextBudgetUpdate(budget: var_budget);
+      case 4:
+        var var_response = sse_decode_box_autoadd_agent_response(deserializer);
+        return OrchestrateEvent_Complete(response: var_response);
+      case 5:
+        var var_message = sse_decode_String(deserializer);
+        return OrchestrateEvent_Error(message: var_message);
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
+  OrchestrateRequest sse_decode_orchestrate_request(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_userInput = sse_decode_String(deserializer);
+    var var_filename = sse_decode_String(deserializer);
+    var var_language = sse_decode_String(deserializer);
+    var var_startUtf16 = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_endUtf16 = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_backend = sse_decode_agent_backend_config(deserializer);
+    var var_openFiles = sse_decode_list_file_reference(deserializer);
+    var var_projectRoot = sse_decode_String(deserializer);
+    var var_conversationTranscriptTokens = sse_decode_u_32(deserializer);
+    var var_contextWindowTokens = sse_decode_u_32(deserializer);
+    var var_projectMemories = sse_decode_String(deserializer);
+    return OrchestrateRequest(
+        userInput: var_userInput,
+        filename: var_filename,
+        language: var_language,
+        startUtf16: var_startUtf16,
+        endUtf16: var_endUtf16,
+        backend: var_backend,
+        openFiles: var_openFiles,
+        projectRoot: var_projectRoot,
+        conversationTranscriptTokens: var_conversationTranscriptTokens,
+        contextWindowTokens: var_contextWindowTokens,
+        projectMemories: var_projectMemories);
+  }
+
+  @protected
+  RangeContext sse_decode_range_context(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_startUtf16 = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_endUtf16 = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_selectedText = sse_decode_String(deserializer);
+    var var_contextBefore = sse_decode_String(deserializer);
+    var var_contextAfter = sse_decode_String(deserializer);
+    var var_contextLines = sse_decode_String(deserializer);
+    var var_startLine = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_endLine = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_totalLines = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_totalLength = sse_decode_CastedPrimitive_usize(deserializer);
+    var var_relatedFiles = sse_decode_list_file_reference(deserializer);
+    return RangeContext(
+        startUtf16: var_startUtf16,
+        endUtf16: var_endUtf16,
+        selectedText: var_selectedText,
+        contextBefore: var_contextBefore,
+        contextAfter: var_contextAfter,
+        contextLines: var_contextLines,
+        startLine: var_startLine,
+        endLine: var_endLine,
+        totalLines: var_totalLines,
+        totalLength: var_totalLength,
+        relatedFiles: var_relatedFiles);
+  }
+
+  @protected
   (int, int) sse_decode_record_casted_primitive_usize_casted_primitive_usize(
       SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -2285,6 +2939,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int sse_decode_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint32();
+  }
+
+  @protected
   int sse_decode_u_8(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8();
@@ -2302,9 +2962,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  int sse_decode_i_32(SseDeserializer deserializer) {
+  void sse_encode_AnyhowException(
+      AnyhowException self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getInt32();
+    sse_encode_String(self.message, serializer);
   }
 
   @protected
@@ -2350,15 +3011,98 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_StreamSink_orchestrate_event_Sse(
+      RustStreamSink<OrchestrateEvent> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+        self.setupAndSerialize(
+            codec: SseCodec(
+          decodeSuccessData: sse_decode_orchestrate_event,
+          decodeErrorData: sse_decode_AnyhowException,
+        )),
+        serializer);
+  }
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
   }
 
   @protected
+  void sse_encode_agent_backend_config(
+      AgentBackendConfig self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.backendId, serializer);
+    sse_encode_String(self.baseUrl, serializer);
+    sse_encode_String(self.model, serializer);
+    sse_encode_String(self.apiKey, serializer);
+  }
+
+  @protected
+  void sse_encode_agent_context_budget(
+      AgentContextBudget self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_32(self.promptTokens, serializer);
+    sse_encode_u_32(self.transcriptTokens, serializer);
+    sse_encode_u_32(self.totalTokens, serializer);
+    sse_encode_u_32(self.contextWindow, serializer);
+    sse_encode_u_32(self.usagePercent, serializer);
+    sse_encode_String(self.warningLevel, serializer);
+  }
+
+  @protected
+  void sse_encode_agent_edit_result(
+      AgentEditResult self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_CastedPrimitive_usize(self.newLength, serializer);
+    sse_encode_CastedPrimitive_usize(self.newLineCount, serializer);
+    sse_encode_bool(self.lineCountChanged, serializer);
+    sse_encode_CastedPrimitive_usize(self.appliedCount, serializer);
+  }
+
+  @protected
+  void sse_encode_agent_response(AgentResponse self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case AgentResponse_ApplyEdits(edits: final edits, message: final message):
+        sse_encode_i_32(0, serializer);
+        sse_encode_list_editor_action(edits, serializer);
+        sse_encode_String(message, serializer);
+      case AgentResponse_Clarify(message: final message):
+        sse_encode_i_32(1, serializer);
+        sse_encode_String(message, serializer);
+      case AgentResponse_Summarize(summary: final summary):
+        sse_encode_i_32(2, serializer);
+        sse_encode_String(summary, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_agent_context_budget(
+      AgentContextBudget self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_agent_context_budget(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_agent_response(
+      AgentResponse self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_agent_response(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_orchestrate_request(
+      OrchestrateRequest self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_orchestrate_request(self, serializer);
   }
 
   @protected
@@ -2401,6 +3145,37 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_CastedPrimitive_usize(self.lineLength, serializer);
     sse_encode_bool(self.lineCountChanged, serializer);
     sse_encode_CastedPrimitive_usize(self.newLineCount, serializer);
+  }
+
+  @protected
+  void sse_encode_editor_action(EditorAction self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_editor_action_kind(self.kind, serializer);
+    sse_encode_CastedPrimitive_usize(self.startUtf16, serializer);
+    sse_encode_CastedPrimitive_usize(self.endUtf16, serializer);
+    sse_encode_String(self.text, serializer);
+  }
+
+  @protected
+  void sse_encode_editor_action_kind(
+      EditorActionKind self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_file_reference(FileReference self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.path, serializer);
+    sse_encode_String(self.snippet, serializer);
+    sse_encode_CastedPrimitive_i_64(self.contentHash, serializer);
+    sse_encode_bool(self.isActive, serializer);
+  }
+
+  @protected
+  void sse_encode_i_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putInt32(self);
   }
 
   @protected
@@ -2452,6 +3227,26 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_String(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_editor_action(
+      List<EditorAction> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_editor_action(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_file_reference(
+      List<FileReference> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_file_reference(item, serializer);
     }
   }
 
@@ -2527,6 +3322,69 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_orchestrate_event(
+      OrchestrateEvent self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case OrchestrateEvent_Thinking(text: final text):
+        sse_encode_i_32(0, serializer);
+        sse_encode_String(text, serializer);
+      case OrchestrateEvent_EditDelta(delta: final delta):
+        sse_encode_i_32(1, serializer);
+        sse_encode_String(delta, serializer);
+      case OrchestrateEvent_ContextWindowUpdate(
+          files: final files,
+          message: final message
+        ):
+        sse_encode_i_32(2, serializer);
+        sse_encode_list_file_reference(files, serializer);
+        sse_encode_String(message, serializer);
+      case OrchestrateEvent_ContextBudgetUpdate(budget: final budget):
+        sse_encode_i_32(3, serializer);
+        sse_encode_box_autoadd_agent_context_budget(budget, serializer);
+      case OrchestrateEvent_Complete(response: final response):
+        sse_encode_i_32(4, serializer);
+        sse_encode_box_autoadd_agent_response(response, serializer);
+      case OrchestrateEvent_Error(message: final message):
+        sse_encode_i_32(5, serializer);
+        sse_encode_String(message, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_orchestrate_request(
+      OrchestrateRequest self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.userInput, serializer);
+    sse_encode_String(self.filename, serializer);
+    sse_encode_String(self.language, serializer);
+    sse_encode_CastedPrimitive_usize(self.startUtf16, serializer);
+    sse_encode_CastedPrimitive_usize(self.endUtf16, serializer);
+    sse_encode_agent_backend_config(self.backend, serializer);
+    sse_encode_list_file_reference(self.openFiles, serializer);
+    sse_encode_String(self.projectRoot, serializer);
+    sse_encode_u_32(self.conversationTranscriptTokens, serializer);
+    sse_encode_u_32(self.contextWindowTokens, serializer);
+    sse_encode_String(self.projectMemories, serializer);
+  }
+
+  @protected
+  void sse_encode_range_context(RangeContext self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_CastedPrimitive_usize(self.startUtf16, serializer);
+    sse_encode_CastedPrimitive_usize(self.endUtf16, serializer);
+    sse_encode_String(self.selectedText, serializer);
+    sse_encode_String(self.contextBefore, serializer);
+    sse_encode_String(self.contextAfter, serializer);
+    sse_encode_String(self.contextLines, serializer);
+    sse_encode_CastedPrimitive_usize(self.startLine, serializer);
+    sse_encode_CastedPrimitive_usize(self.endLine, serializer);
+    sse_encode_CastedPrimitive_usize(self.totalLines, serializer);
+    sse_encode_CastedPrimitive_usize(self.totalLength, serializer);
+    sse_encode_list_file_reference(self.relatedFiles, serializer);
+  }
+
+  @protected
   void sse_encode_record_casted_primitive_usize_casted_primitive_usize(
       (int, int) self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -2545,6 +3403,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_u_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint32(self);
+  }
+
+  @protected
   void sse_encode_u_8(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self);
@@ -2559,12 +3423,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_usize(BigInt self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putBigUint64(self);
-  }
-
-  @protected
-  void sse_encode_i_32(int self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putInt32(self);
   }
 }
 

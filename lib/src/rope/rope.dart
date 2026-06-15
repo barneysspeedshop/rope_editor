@@ -515,6 +515,59 @@ class Rope {
       cachedWindowEnd: cachedWindowEnd,
     );
   }
+
+  /// Returns contextual text around a UTF-16 range for agent prompts.
+  RangeContext getContextForRange(
+    int startUtf16,
+    int endUtf16, {
+    int contextLines = 5,
+    List<api.FileReference> relatedFiles = const [],
+  }) {
+    final ctx = api.getContextForRange(
+      instance: _instance,
+      startUtf16: startUtf16,
+      endUtf16: endUtf16,
+      contextLines: contextLines,
+      relatedFiles: relatedFiles,
+    );
+    return RangeContext(
+      startUtf16: ctx.startUtf16,
+      endUtf16: ctx.endUtf16,
+      selectedText: ctx.selectedText,
+      contextBefore: ctx.contextBefore,
+      contextAfter: ctx.contextAfter,
+      contextLines: ctx.contextLines,
+      startLine: ctx.startLine,
+      endLine: ctx.endLine,
+      totalLines: ctx.totalLines,
+      totalLength: ctx.totalLength,
+      relatedFiles: ctx.relatedFiles,
+    );
+  }
+
+  /// Underlying Rust rope handle for advanced FFI (e.g. agent orchestration).
+  api.RopeInstance get instance => _instance;
+
+  /// Applies agent edits atomically on the Rust rope.
+  AgentEditResult applyAgentEdit(List<EditorAction> actions) {
+    final result = api.applyAgentEdit(
+      instance: _instance,
+      actions: actions
+          .map((action) => api.EditorAction(
+                kind: action.kind,
+                startUtf16: action.startUtf16,
+                endUtf16: action.endUtf16,
+                text: action.text,
+              ))
+          .toList(),
+    );
+    return AgentEditResult(
+      newLength: result.newLength,
+      newLineCount: result.newLineCount,
+      lineCountChanged: result.lineCountChanged,
+      appliedCount: result.appliedCount,
+    );
+  }
 }
 
 // ===========================================================================
@@ -622,6 +675,85 @@ class ImeProjection {
     required this.selectionBase,
     required this.selectionExtent,
   });
+}
+
+/// Context window around a UTF-16 range for agent prompts.
+class RangeContext {
+  final int startUtf16;
+  final int endUtf16;
+  final String selectedText;
+  final String contextBefore;
+  final String contextAfter;
+  final String contextLines;
+  final int startLine;
+  final int endLine;
+  final int totalLines;
+  final int totalLength;
+  final List<api.FileReference> relatedFiles;
+
+  const RangeContext({
+    required this.startUtf16,
+    required this.endUtf16,
+    required this.selectedText,
+    required this.contextBefore,
+    required this.contextAfter,
+    required this.contextLines,
+    required this.startLine,
+    required this.endLine,
+    required this.totalLines,
+    required this.totalLength,
+    this.relatedFiles = const [],
+  });
+}
+
+/// Result of applying a batch of agent edits atomically.
+class AgentEditResult {
+  final int newLength;
+  final int newLineCount;
+  final bool lineCountChanged;
+  final int appliedCount;
+
+  const AgentEditResult({
+    required this.newLength,
+    required this.newLineCount,
+    required this.lineCountChanged,
+    required this.appliedCount,
+  });
+}
+
+/// A single agent edit action targeting UTF-16 offsets in the document.
+class EditorAction {
+  final api.EditorActionKind kind;
+  final int startUtf16;
+  final int endUtf16;
+  final String text;
+
+  const EditorAction({
+    required this.kind,
+    required this.startUtf16,
+    required this.endUtf16,
+    this.text = '',
+  });
+
+  factory EditorAction.insert(int offset, String text) => EditorAction(
+        kind: api.EditorActionKind.insert,
+        startUtf16: offset,
+        endUtf16: offset,
+        text: text,
+      );
+
+  factory EditorAction.delete(int start, int end) => EditorAction(
+        kind: api.EditorActionKind.delete,
+        startUtf16: start,
+        endUtf16: end,
+      );
+
+  factory EditorAction.replace(int start, int end, String text) => EditorAction(
+        kind: api.EditorActionKind.replace,
+        startUtf16: start,
+        endUtf16: end,
+        text: text,
+      );
 }
 
 class _RopeMatch implements Match {

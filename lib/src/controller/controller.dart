@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rope_editor/src/rope/rope.dart';
-import 'package:rope_editor/src/rust/api.dart' show MinimapLineDensity;
+import 'package:rope_editor/src/rust/api.dart' show MinimapLineDensity, EditorActionKind;
 import 'package:rope_editor/src/styling.dart';
 import 'package:rope_editor/src/rope/undo_redo.dart';
 
@@ -470,6 +470,79 @@ class RopeEditorController extends ChangeNotifier implements DeltaTextInputClien
     _maybeScrollToCursorWithContext(result.cursorLine);
 
     // Sync with IME to ensure the OS keyboard knows where the caret moved.
+    _syncToConnection();
+    notifyListeners();
+  }
+
+  /// Applies a batch of agent edits atomically via the Rust rope, records undo,
+  /// and notifies listeners.
+  void applyAgentActions(List<EditorAction> actions, {TextSelection? selectionAfter}) {
+    if (actions.isEmpty) return;
+
+    final TextSelection selectionBefore = _selection;
+    _verticalColumnMemory = null;
+    _dirtyOffset = actions.map((a) => a.startUtf16).reduce((a, b) => a < b ? a : b);
+
+    final forwardOps = <EditOperation>[];
+    for (final action in actions) {
+      final start = action.startUtf16;
+      final end = action.endUtf16;
+      switch (action.kind) {
+        case EditorActionKind.insert:
+          forwardOps.add(InsertOperation(
+            offset: start,
+            text: action.text,
+            selectionBefore: selectionBefore,
+            selectionAfter: selectionAfter ?? selectionBefore,
+          ));
+        case EditorActionKind.delete:
+          final deleted = _rope.substring(start, end);
+          forwardOps.add(DeleteOperation(
+            offset: start,
+            text: deleted,
+            selectionBefore: selectionBefore,
+            selectionAfter: selectionAfter ?? selectionBefore,
+          ));
+        case EditorActionKind.replace:
+          final deleted = _rope.substring(start, end);
+          forwardOps.add(ReplaceOperation(
+            offset: start,
+            deletedText: deleted,
+            insertedText: action.text,
+            selectionBefore: selectionBefore,
+            selectionAfter: selectionAfter ?? selectionBefore,
+          ));
+      }
+    }
+
+    final result = _rope.applyAgentEdit(actions);
+    _cachedLength = result.newLength;
+
+    final newSelection = selectionAfter ??
+        TextSelection.collapsed(
+          offset: actions.last.startUtf16 + actions.last.text.length,
+        );
+    _selection = newSelection;
+
+    if (!(_undoController?.isUndoRedoInProgress ?? false)) {
+      _undoController?.recordEdit(CompoundOperation(
+        operations: forwardOps,
+        selectionBefore: selectionBefore,
+        selectionAfter: newSelection,
+      ));
+    }
+
+    lineStructureChanged = result.lineCountChanged ||
+        forwardOps.any((op) => switch (op) {
+              InsertOperation(:final text) => text.contains('\n'),
+              DeleteOperation(:final text) => text.contains('\n'),
+              ReplaceOperation(:final deletedText, :final insertedText) =>
+                deletedText.contains('\n') || insertedText.contains('\n'),
+              CompoundOperation() => false,
+            });
+    _version++;
+    _imeProjectionDirty = true;
+    _maybeScrollToCursor();
     _syncToConnection();
     notifyListeners();
   }

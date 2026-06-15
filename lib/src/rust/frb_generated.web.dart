@@ -25,6 +25,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
           .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance;
 
   @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw);
+
+  @protected
   RopeInstance
       dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRopeInstance(
           dynamic raw);
@@ -46,10 +49,35 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
           dynamic raw);
 
   @protected
+  RustStreamSink<OrchestrateEvent> dco_decode_StreamSink_orchestrate_event_Sse(
+      dynamic raw);
+
+  @protected
   String dco_decode_String(dynamic raw);
 
   @protected
+  AgentBackendConfig dco_decode_agent_backend_config(dynamic raw);
+
+  @protected
+  AgentContextBudget dco_decode_agent_context_budget(dynamic raw);
+
+  @protected
+  AgentEditResult dco_decode_agent_edit_result(dynamic raw);
+
+  @protected
+  AgentResponse dco_decode_agent_response(dynamic raw);
+
+  @protected
   bool dco_decode_bool(dynamic raw);
+
+  @protected
+  AgentContextBudget dco_decode_box_autoadd_agent_context_budget(dynamic raw);
+
+  @protected
+  AgentResponse dco_decode_box_autoadd_agent_response(dynamic raw);
+
+  @protected
+  OrchestrateRequest dco_decode_box_autoadd_orchestrate_request(dynamic raw);
 
   @protected
   CursorContext dco_decode_cursor_context(dynamic raw);
@@ -59,6 +87,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   EditResult dco_decode_edit_result(dynamic raw);
+
+  @protected
+  EditorAction dco_decode_editor_action(dynamic raw);
+
+  @protected
+  EditorActionKind dco_decode_editor_action_kind(dynamic raw);
+
+  @protected
+  FileReference dco_decode_file_reference(dynamic raw);
+
+  @protected
+  int dco_decode_i_32(dynamic raw);
 
   @protected
   PlatformInt64 dco_decode_i_64(dynamic raw);
@@ -77,6 +117,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
+  List<EditorAction> dco_decode_list_editor_action(dynamic raw);
+
+  @protected
+  List<FileReference> dco_decode_list_file_reference(dynamic raw);
 
   @protected
   List<LineIndentInfo> dco_decode_list_line_indent_info(dynamic raw);
@@ -104,11 +150,23 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
           dynamic raw);
 
   @protected
+  OrchestrateEvent dco_decode_orchestrate_event(dynamic raw);
+
+  @protected
+  OrchestrateRequest dco_decode_orchestrate_request(dynamic raw);
+
+  @protected
+  RangeContext dco_decode_range_context(dynamic raw);
+
+  @protected
   (int, int) dco_decode_record_casted_primitive_usize_casted_primitive_usize(
       dynamic raw);
 
   @protected
   RopeMetrics dco_decode_rope_metrics(dynamic raw);
+
+  @protected
+  int dco_decode_u_32(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -118,6 +176,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   BigInt dco_decode_usize(dynamic raw);
+
+  @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
 
   @protected
   RopeInstance
@@ -141,10 +202,40 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
           SseDeserializer deserializer);
 
   @protected
+  RustStreamSink<OrchestrateEvent> sse_decode_StreamSink_orchestrate_event_Sse(
+      SseDeserializer deserializer);
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  AgentBackendConfig sse_decode_agent_backend_config(
+      SseDeserializer deserializer);
+
+  @protected
+  AgentContextBudget sse_decode_agent_context_budget(
+      SseDeserializer deserializer);
+
+  @protected
+  AgentEditResult sse_decode_agent_edit_result(SseDeserializer deserializer);
+
+  @protected
+  AgentResponse sse_decode_agent_response(SseDeserializer deserializer);
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
+
+  @protected
+  AgentContextBudget sse_decode_box_autoadd_agent_context_budget(
+      SseDeserializer deserializer);
+
+  @protected
+  AgentResponse sse_decode_box_autoadd_agent_response(
+      SseDeserializer deserializer);
+
+  @protected
+  OrchestrateRequest sse_decode_box_autoadd_orchestrate_request(
+      SseDeserializer deserializer);
 
   @protected
   CursorContext sse_decode_cursor_context(SseDeserializer deserializer);
@@ -155,6 +246,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   EditResult sse_decode_edit_result(SseDeserializer deserializer);
+
+  @protected
+  EditorAction sse_decode_editor_action(SseDeserializer deserializer);
+
+  @protected
+  EditorActionKind sse_decode_editor_action_kind(SseDeserializer deserializer);
+
+  @protected
+  FileReference sse_decode_file_reference(SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
   PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
@@ -173,6 +276,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
+  List<EditorAction> sse_decode_list_editor_action(
+      SseDeserializer deserializer);
+
+  @protected
+  List<FileReference> sse_decode_list_file_reference(
+      SseDeserializer deserializer);
 
   @protected
   List<LineIndentInfo> sse_decode_list_line_indent_info(
@@ -203,11 +314,24 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
           SseDeserializer deserializer);
 
   @protected
+  OrchestrateEvent sse_decode_orchestrate_event(SseDeserializer deserializer);
+
+  @protected
+  OrchestrateRequest sse_decode_orchestrate_request(
+      SseDeserializer deserializer);
+
+  @protected
+  RangeContext sse_decode_range_context(SseDeserializer deserializer);
+
+  @protected
   (int, int) sse_decode_record_casted_primitive_usize_casted_primitive_usize(
       SseDeserializer deserializer);
 
   @protected
   RopeMetrics sse_decode_rope_metrics(SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -219,7 +343,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt sse_decode_usize(SseDeserializer deserializer);
 
   @protected
-  int sse_decode_i_32(SseDeserializer deserializer);
+  void sse_encode_AnyhowException(
+      AnyhowException self, SseSerializer serializer);
 
   @protected
   void
@@ -243,10 +368,41 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
           RopeInstance self, SseSerializer serializer);
 
   @protected
+  void sse_encode_StreamSink_orchestrate_event_Sse(
+      RustStreamSink<OrchestrateEvent> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_agent_backend_config(
+      AgentBackendConfig self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_agent_context_budget(
+      AgentContextBudget self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_agent_edit_result(
+      AgentEditResult self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_agent_response(AgentResponse self, SseSerializer serializer);
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_agent_context_budget(
+      AgentContextBudget self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_agent_response(
+      AgentResponse self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_orchestrate_request(
+      OrchestrateRequest self, SseSerializer serializer);
 
   @protected
   void sse_encode_cursor_context(CursorContext self, SseSerializer serializer);
@@ -257,6 +413,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_edit_result(EditResult self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_editor_action(EditorAction self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_editor_action_kind(
+      EditorActionKind self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_file_reference(FileReference self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
@@ -277,6 +446,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_editor_action(
+      List<EditorAction> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_file_reference(
+      List<FileReference> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_line_indent_info(
@@ -307,11 +484,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       List<(int, int)>? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_orchestrate_event(
+      OrchestrateEvent self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_orchestrate_request(
+      OrchestrateRequest self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_range_context(RangeContext self, SseSerializer serializer);
+
+  @protected
   void sse_encode_record_casted_primitive_usize_casted_primitive_usize(
       (int, int) self, SseSerializer serializer);
 
   @protected
   void sse_encode_rope_metrics(RopeMetrics self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);
@@ -321,9 +512,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_usize(BigInt self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_i_32(int self, SseSerializer serializer);
 }
 
 // Section: wire_class

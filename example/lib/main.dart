@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:re_highlight/styles/github-dark.dart';
+import 'package:re_highlight/styles/github.dart';
 import 'package:rope_editor/rope_editor.dart';
 
 void main() async {
@@ -24,8 +26,16 @@ class RopeEditorExampleApp extends StatelessWidget {
     return MaterialApp(
       title: 'Rope Editor Basic Example',
       debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.system,
       theme: ThemeData(
-        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
         useMaterial3: true,
       ),
       home: const EditorPage(),
@@ -67,6 +77,10 @@ class _EditorPageState extends State<EditorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final editorTheme = isDark ? githubDarkTheme : githubTheme;
+    final rootStyle = editorTheme['root']!;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rope Editor'),
@@ -83,11 +97,13 @@ class _EditorPageState extends State<EditorPage> {
       ),
       body: RopeEditor(
         controller: _controller,
-        findController: _findController, // Add the required findController
-        autoFocus: true, // Corrected parameter name
-        textStyle: const TextStyle( // Corrected parameter name
+        findController: _findController,
+        editorTheme: editorTheme,
+        autoFocus: true,
+        textStyle: TextStyle(
           fontFamily: 'monospace',
           fontSize: 14,
+          color: rootStyle.color,
         ),
       ),
     );

@@ -1,6 +1,6 @@
 name: rope_editor
 description: A lightweight rope-based text editor for Flutter using a Rust backend.
-version: 0.0.4
+version: 0.1.0
 homepage: https://github.com/barneysspeedshop/rope_editor
 repository: https://github.com/barneysspeedshop/rope_editor
 issue_tracker: https://github.com/barneysspeedshop/rope_editor/issues
@@ -20,6 +20,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_rust_bridge: ^2.12.0
+  freezed_annotation: ^2.4.4
   legacy_context_menu: ^2.2.0
   legacy_keyboard_shortcut_decoration: ^1.1.0
   re_highlight: ^0.0.3
@@ -29,6 +30,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  freezed: ^2.5.7
+  build_runner: ^2.4.13
 
 flutter:
   uses-material-design: true

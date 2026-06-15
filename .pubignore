@@ -3,3 +3,13 @@
 **/coverage/
 **/cargokit_build/
 /rust/target/
+
+# IDE / editor (from .gitignore — .pubignore replaces .gitignore when publishing)
+*.iml
+.idea/
+.DS_Store
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+
+# Dev-only agent docs (trace_calls.sh is documented in README)
+scripts/AGENTS.md

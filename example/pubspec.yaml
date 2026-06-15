@@ -10,6 +10,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter
+  re_highlight: ^0.0.3
   rope_editor:
     path: ../
 

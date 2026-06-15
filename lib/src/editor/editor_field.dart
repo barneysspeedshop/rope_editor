@@ -122,6 +122,9 @@ class RenderRopeField extends RenderBox {
   bool _touchMovedDuringGesture = false;
   bool _hadSelectionOnTouchDown = false;
   Timer? _touchLongPressTimer;
+  int _consecutiveMouseClicks = 0;
+  DateTime? _lastMouseClickTime;
+  Offset? _lastMouseClickGlobalPosition;
 
   FocusNode _focusNode;
   FocusNode get focusNode => _focusNode;
@@ -529,6 +532,18 @@ class RenderRopeField extends RenderBox {
       } else {
         // Mouse/stylus keep immediate drag-to-select behavior.
         final offset = _getTextOffsetFromPosition(event.localPosition);
+        final int clickCount = _registerMouseClick(event.position);
+        if (clickCount == 2) {
+          _selectWordAtOffset(offset);
+          _cancelMouseDragState();
+          return;
+        }
+        if (clickCount >= 3) {
+          _selectLineAtOffset(offset);
+          _cancelMouseDragState();
+          return;
+        }
+
         final bool extendSelection = HardwareKeyboard.instance.isShiftPressed;
         if (extendSelection) {
           controller.selection = controller.selection.copyWith(extentOffset: offset);
@@ -765,6 +780,57 @@ class RenderRopeField extends RenderBox {
   void _stopSelectionAutoScroll() {
     _selectionAutoScrollTimer?.cancel();
     _selectionAutoScrollTimer = null;
+  }
+
+  int _registerMouseClick(Offset globalPosition) {
+    final DateTime now = DateTime.now();
+    final Duration elapsed = _lastMouseClickTime == null ? Duration.zero : now.difference(_lastMouseClickTime!);
+    final double distanceMoved = _lastMouseClickGlobalPosition == null ? double.infinity : (globalPosition - _lastMouseClickGlobalPosition!).distance;
+
+    if (elapsed > kDoubleTapTimeout || distanceMoved > kDoubleTapSlop) {
+      _consecutiveMouseClicks = 1;
+    } else {
+      _consecutiveMouseClicks++;
+      if (_consecutiveMouseClicks > 3) {
+        _consecutiveMouseClicks = 1;
+      }
+    }
+
+    _lastMouseClickTime = now;
+    _lastMouseClickGlobalPosition = globalPosition;
+    return _consecutiveMouseClicks;
+  }
+
+  void _cancelMouseDragState() {
+    _touchSelectionMode = false;
+    _draggingSelection = false;
+    _mouseDragMoved = false;
+    _activeDragPointer = null;
+    _lastDragGlobalPosition = null;
+    _autoScrollDirection = 0;
+    _stopSelectionAutoScroll();
+  }
+
+  void _selectLineAtOffset(int globalOffset) {
+    if (controller.length <= 0) {
+      controller.selection = const TextSelection.collapsed(offset: 0);
+      return;
+    }
+
+    final int clampedOffset = globalOffset.clamp(0, controller.length);
+    final int lineIndex = controller.getLineAtOffset(clampedOffset).clamp(0, controller.lineCount - 1);
+    final int lineStart = controller.getLineStartOffset(lineIndex);
+    final int lineEnd = lineIndex < controller.lineCount - 1 ? controller.getLineStartOffset(lineIndex + 1) : controller.length;
+
+    int extent = lineEnd;
+    if (lineIndex < controller.lineCount - 1 && extent > lineStart) {
+      final String lastChar = controller.rope.substring(extent - 1, extent);
+      if (lastChar == '\n') {
+        extent--;
+      }
+    }
+
+    controller.selection = TextSelection(baseOffset: lineStart, extentOffset: extent);
   }
 
   void _selectWordAtOffset(int globalOffset) {

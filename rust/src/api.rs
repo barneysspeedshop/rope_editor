@@ -1,7 +1,7 @@
 use flutter_rust_bridge::frb;
 use parking_lot::RwLock;
 use regex::RegexBuilder;
-use crate::zed_rope::{self, Rope, OffsetUtf16, Point};
+use crate::zed_rope::{Rope, OffsetUtf16, Point};
 use std::sync::Arc;
 
 pub struct RopeInstance {
@@ -42,23 +42,23 @@ impl RopeInstance {
     fn get_state(&self) -> &RwLock<EditorState> {
         &self.state
     }
+
+    /// Shares the underlying rope for background agent orchestration.
+    pub(crate) fn clone_handle(&self) -> Self {
+        Self {
+            state: Arc::clone(&self.state),
+        }
+    }
 }
 
 struct EditorState {
     rope: Rope,
-    // For viewport-based loading of very long single lines
-    file_handle: Option<std::fs::File>,
-    file_byte_offset: usize,
-    total_file_size: usize,
 }
 
 impl EditorState {
     fn new(text: String) -> Self {
         Self {
             rope: Rope::from(text),
-            file_handle: None,
-            file_byte_offset: 0,
-            total_file_size: 0,
         }
     }
 }
@@ -124,11 +124,6 @@ fn char_at_byte(rope: &Rope, byte_offset: usize) -> char {
     rope.chars_at(byte_offset).next().unwrap_or('\0')
 }
 
-/// Get max UTF-16 length across all lines (for horizontal scroll).
-fn max_line_utf16_len(rope: &Rope) -> usize {
-    rope.summary().longest_row_chars as usize
-}
-
 // ── Public FFI functions ──────────────────────────────────────────────────────
 
 #[frb(sync)]
@@ -148,12 +143,6 @@ pub fn get_metrics(instance: &RopeInstance) -> RopeMetrics {
 #[inline]
 fn utf16_to_char_offset(state: &EditorState, utf16_offset: usize) -> usize {
     utf16_to_byte(&state.rope, utf16_offset)
-}
-
-/// Convert byte offset to UTF-16 offset.
-#[inline]
-fn byte_to_utf16_offset(state: &EditorState, byte_offset: usize) -> usize {
-    byte_to_utf16(&state.rope, byte_offset)
 }
 
 #[frb(sync)]
@@ -643,12 +632,6 @@ fn find_word_boundary_backward(rope: &Rope, start_byte: usize) -> usize {
     }
 
     byte_to_utf16(rope, pos)
-}
-
-/// Helper to convert byte offset to UTF-16 offset (replaces char_to_utf16_offset)
-#[inline]
-fn char_to_utf16_offset(state: &EditorState, byte_offset: usize) -> usize {
-    byte_to_utf16(&state.rope, byte_offset)
 }
 
 // ============================================================================
@@ -1259,6 +1242,316 @@ pub fn is_ime_window_valid(
     caret_offset >= cached_window_start.saturating_add(margin)
         && caret_offset + margin <= cached_window_end
         && cached_window_end <= doc_length
+}
+
+// ============================================================================
+// 16. AGENT EDIT API
+// ============================================================================
+// Unified action primitives and batch application for AI agent edits.
+
+/// Kind of edit an agent can perform on the document rope.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EditorActionKind {
+    Insert,
+    Delete,
+    Replace,
+}
+
+/// A single agent edit action targeting UTF-16 offsets in the document.
+#[derive(Debug, Clone)]
+pub struct EditorAction {
+    pub kind: EditorActionKind,
+    pub start_utf16: usize,
+    pub end_utf16: usize,
+    /// Replacement or inserted text. Empty for [EditorActionKind::Delete].
+    pub text: String,
+}
+
+/// A lightweight reference to an open or related file in agent context.
+#[derive(Debug, Clone)]
+pub struct FileReference {
+    /// Display path or filename.
+    pub path: String,
+    /// Leading content sample (not the full file).
+    pub snippet: String,
+    /// Content fingerprint from the rope hash API.
+    pub content_hash: i64,
+    /// Whether this is the actively edited file.
+    pub is_active: bool,
+}
+
+/// Context window around a UTF-16 range for agent prompts.
+pub struct RangeContext {
+    /// The requested range start (UTF-16).
+    pub start_utf16: usize,
+    /// The requested range end (UTF-16).
+    pub end_utf16: usize,
+    /// Text within [start_utf16, end_utf16).
+    pub selected_text: String,
+    /// Characters immediately before the selection (within the context window).
+    pub context_before: String,
+    /// Characters immediately after the selection (within the context window).
+    pub context_after: String,
+    /// Full line block covering the context window, including line numbers.
+    pub context_lines: String,
+    /// First line index included in [context_lines].
+    pub start_line: usize,
+    /// Last line index included in [context_lines] (inclusive).
+    pub end_line: usize,
+    pub total_lines: usize,
+    pub total_length: usize,
+    /// Other open files in scope (path, snippet, hash) without full project load.
+    pub related_files: Vec<FileReference>,
+}
+
+/// Result of applying a batch of agent edits atomically.
+pub struct AgentEditResult {
+    pub new_length: usize,
+    pub new_line_count: usize,
+    pub line_count_changed: bool,
+    pub applied_count: usize,
+}
+
+fn apply_single_agent_action(rope: &mut Rope, action: &EditorAction) {
+    let start_byte = utf16_to_byte(rope, action.start_utf16);
+    let end_byte = utf16_to_byte(rope, action.end_utf16);
+    match action.kind {
+        EditorActionKind::Insert => {
+            if start_byte == end_byte {
+                rope.replace(start_byte..start_byte, &action.text);
+            }
+        }
+        EditorActionKind::Delete => {
+            if start_byte < end_byte {
+                rope.replace(start_byte..end_byte, "");
+            }
+        }
+        EditorActionKind::Replace => {
+            rope.replace(start_byte..end_byte, &action.text);
+        }
+    }
+}
+
+/// Returns contextual text around a UTF-16 range without loading the whole file.
+///
+/// [context_lines] controls how many lines before and after the selection are
+/// included in [RangeContext::context_lines].
+#[frb(sync)]
+pub fn get_context_for_range(
+    instance: &RopeInstance,
+    start_utf16: usize,
+    end_utf16: usize,
+    context_lines: usize,
+    related_files: Vec<FileReference>,
+) -> RangeContext {
+    let state = instance.get_state().read();
+    let rope = &state.rope;
+    let total_length = rope.summary().len_utf16.0;
+    let total_lines = rope_len_lines(rope);
+
+    let start = start_utf16.min(total_length);
+    let end = end_utf16.min(total_length).max(start);
+
+    let start_byte = utf16_to_byte(rope, start);
+    let end_byte = utf16_to_byte(rope, end);
+    let selected_text = if start_byte < end_byte {
+        rope.slice(start_byte..end_byte).to_string()
+    } else {
+        String::new()
+    };
+
+    let start_line = byte_to_line(rope, start_byte);
+    let end_line = byte_to_line(rope, end_byte.saturating_sub(1).max(start_byte));
+
+    let window_start_line = start_line.saturating_sub(context_lines);
+    let window_end_line = (end_line + context_lines + 1).min(total_lines);
+
+    let context_lines_text = if window_start_line < window_end_line {
+        let window_start_byte = line_to_byte(rope, window_start_line);
+        let window_end_byte = if window_end_line >= total_lines {
+            rope.summary().len
+        } else {
+            line_to_byte(rope, window_end_line)
+        };
+        let raw = rope.slice(window_start_byte..window_end_byte).to_string();
+        format_numbered_lines(&raw, window_start_line)
+    } else {
+        String::new()
+    };
+
+    let context_char_budget = 512usize;
+    let before_start = start.saturating_sub(context_char_budget);
+    let after_end = (end + context_char_budget).min(total_length);
+    let before_start_byte = utf16_to_byte(rope, before_start);
+    let start_byte_for_before = utf16_to_byte(rope, start);
+    let end_byte_for_after = utf16_to_byte(rope, end);
+    let after_end_byte = utf16_to_byte(rope, after_end);
+    let context_before = if before_start_byte < start_byte_for_before {
+        rope.slice(before_start_byte..start_byte_for_before).to_string()
+    } else {
+        String::new()
+    };
+    let context_after = if end_byte_for_after < after_end_byte {
+        rope.slice(end_byte_for_after..after_end_byte).to_string()
+    } else {
+        String::new()
+    };
+
+    RangeContext {
+        start_utf16: start,
+        end_utf16: end,
+        selected_text,
+        context_before,
+        context_after,
+        context_lines: context_lines_text,
+        start_line: window_start_line,
+        end_line: window_end_line.saturating_sub(1),
+        total_lines,
+        total_length,
+        related_files,
+    }
+}
+
+fn format_numbered_lines(text: &str, start_line: usize) -> String {
+    let mut out = String::new();
+    for (index, line) in text.lines().enumerate() {
+        if index > 0 {
+            out.push('\n');
+        }
+        out.push_str(&format!("{:>4} | {}", start_line + index + 1, line));
+    }
+    out
+}
+
+/// Applies agent edits as a single atomic transaction on the rope.
+///
+/// Actions are sorted by descending start offset so earlier edits do not
+/// invalidate later offsets. The caller is responsible for notifying Flutter
+/// listeners after this returns.
+#[frb(sync)]
+pub fn apply_agent_edit(
+    instance: &RopeInstance,
+    mut actions: Vec<EditorAction>,
+) -> AgentEditResult {
+    actions.sort_by(|a, b| b.start_utf16.cmp(&a.start_utf16));
+
+    let mut state = instance.get_state().write();
+    let old_line_count = rope_len_lines(&state.rope);
+    let applied_count = actions.len();
+
+    for action in &actions {
+        apply_single_agent_action(&mut state.rope, action);
+    }
+
+    let new_line_count = rope_len_lines(&state.rope);
+    let new_length = state.rope.summary().len_utf16.0;
+
+    AgentEditResult {
+        new_length,
+        new_line_count,
+        line_count_changed: old_line_count != new_line_count,
+        applied_count,
+    }
+}
+
+// ============================================================================
+// 17. AGENT ORCHESTRATOR (yoyo-evolve bridge)
+// ============================================================================
+
+/// LLM backend configuration passed from Dart preferences.
+#[derive(Debug, Clone)]
+pub struct AgentBackendConfig {
+    pub backend_id: String,
+    pub base_url: String,
+    pub model: String,
+    pub api_key: String,
+}
+
+/// Full orchestration request from the IDE.
+#[derive(Debug, Clone)]
+pub struct OrchestrateRequest {
+    pub user_input: String,
+    pub filename: String,
+    pub language: String,
+    pub start_utf16: usize,
+    pub end_utf16: usize,
+    pub backend: AgentBackendConfig,
+    /// Open documents indexed by Dart for multi-file context.
+    pub open_files: Vec<FileReference>,
+    /// Project/workspace root for git + instruction file context.
+    pub project_root: String,
+    /// Estimated tokens from prior chat turns (computed in Dart).
+    pub conversation_transcript_tokens: u32,
+    /// Model context window size (defaults to 32k when zero).
+    pub context_window_tokens: u32,
+    /// Numbered project memories from `.rope_notes/memory.json` (Dart-side).
+    pub project_memories: String,
+}
+
+/// Token budget snapshot for the agent panel.
+#[derive(Debug, Clone)]
+pub struct AgentContextBudget {
+    pub prompt_tokens: u32,
+    pub transcript_tokens: u32,
+    pub total_tokens: u32,
+    pub context_window: u32,
+    pub usage_percent: u32,
+    pub warning_level: String,
+}
+
+/// Union returned when orchestration completes (mirrors Dart AgentResponse).
+#[derive(Debug, Clone)]
+pub enum AgentResponse {
+    ApplyEdits {
+        edits: Vec<EditorAction>,
+        /// Conversational reply for the agent REPL in the same turn.
+        message: String,
+    },
+    Clarify { message: String },
+    Summarize { summary: String },
+}
+
+/// Streaming events for the IDE agent console / ghost layer.
+#[derive(Debug, Clone)]
+pub enum OrchestrateEvent {
+    Thinking { text: String },
+    EditDelta { delta: String },
+    /// Reports which files are in the agent context window.
+    ContextWindowUpdate {
+        files: Vec<FileReference>,
+        message: String,
+    },
+    /// Estimated token usage before the LLM call.
+    ContextBudgetUpdate {
+        budget: AgentContextBudget,
+    },
+    Complete { response: AgentResponse },
+    Error { message: String },
+}
+
+/// Runs yoyo-evolve-inspired orchestration and returns the final response.
+#[frb(sync)]
+pub fn orchestrate_request_sync(
+    instance: &RopeInstance,
+    request: OrchestrateRequest,
+) -> Result<AgentResponse, String> {
+    crate::orchestrator::orchestrate_request_sync(instance, request)
+}
+
+/// Streaming orchestration for real-time UI updates.
+#[frb]
+pub fn orchestrate_request(
+    instance: &RopeInstance,
+    request: OrchestrateRequest,
+    sink: crate::frb_generated::StreamSink<OrchestrateEvent>,
+) {
+    crate::orchestrator::orchestrate_request(instance, request, sink)
+}
+
+/// Stops orchestrate threads left over from a prior Dart isolate (Flutter hot restart).
+#[frb(sync)]
+pub fn orchestrate_cancel_stale() {
+    crate::orchestrator::orchestrate_cancel_stale();
 }
 
 #[cfg(test)]
